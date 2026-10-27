@@ -22,7 +22,7 @@ Este proyecto consiste en el desarrollo de un sistema integral orientado a objet
 *   **Estabilidad:** El sistema ejecuta 10 simulaciones (válidas e inválidas) sin detenerse ante errores.
 
 ## 👥 Integrantes del Equipo (5)
-*   **Cristian Camilo Silva Graciano** - Lógica base, POO y Excepciones.
+*   **Yisenia Muriel Berrio** - Lógica base, POO y Excepciones.
 *   **Integrante 2** - Validación de datos y Encapsulación.
 *   **Integrante 3** - Polimorfismo y Cálculo de Costos.
 *   **Integrante 4** - Documentación y Configuración de Logs.
