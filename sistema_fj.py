@@ -20,20 +20,51 @@ class Entidad:
 
 # 4. CLASE CLIENTE (Encapsulación y Validaciones)
 class Cliente(Entidad):
-    def __init__(self, id_cliente, nombre, correo):
+    def __init__(self, id_cliente: int, nombre: str, correo: str):
         super().__init__(id_cliente)
-        self._nombre = nombre
-        self._correo = None
-        self.set_correo(correo)
+        self.nombre = nombre  # Activa @nombre.setter
+        self.correo = correo  # Activa @correo.setter
 
-    def set_correo(self, correo):
-        if "@" not in correo:
-            raise ErrorValidacion(f"Correo inválido: {correo}")
-        self._correo = correo
+    @property
+    def id_cliente(self) -> int:
+        return self.id_entidad
+
+    @id_cliente.setter
+    def id_cliente(self, valor: int):
+        self.id_entidad = valor
+
+    # --- Encapsulación y Validación de Nombre ---
+    @property
+    def nombre(self) -> str:
+        return self._nombre
+
+    @nombre.setter
+    def nombre(self, valor: str):
+        if not isinstance(valor, str) or not valor.strip():
+            raise ErrorValidacion("El nombre del cliente no puede estar vacío.")
+        if len(valor.strip()) < 2:
+            raise ErrorValidacion(f"Nombre inválido ('{valor}'). Debe tener al menos 2 caracteres.")
+        self._nombre = valor.strip()
+
+    # --- Encapsulación y Validación de Correo ---
+    @property
+    def correo(self) -> str:
+        return self._correo
+
+    @correo.setter
+    def correo(self, valor: str):
+        patron_email = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+        if not isinstance(valor, str) or not re.match(patron_email, valor.strip()):
+            raise ErrorValidacion(f"Correo electrónico inválido: '{valor}'. Formato requerido: usuario@dominio.com")
+        self._correo = valor.strip()
+
+    def set_correo(self, correo: str):
+        """Método helper para compatibilidad previa."""
+        self.correo = correo
 
     def obtener_detalles(self):
-        return f"Cliente: {self._nombre} | Correo: {self._correo}"
-
+        return f"Cliente ID: {self.id_cliente} | Nombre: {self.nombre} | Correo: {self.correo}"
+        
 # 5. CLASE ABSTRACTA SERVICIO Y DERIVADOS (Polimorfismo)
 class Servicio(Entidad):
     def __init__(self, id_servicio, nombre):
