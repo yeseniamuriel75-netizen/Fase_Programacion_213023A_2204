@@ -1,12 +1,34 @@
 import logging
 import re
 
+# >>>>>>>>>> INICIO CAMBIO 1 - Integrante 4 (Mateo Betancur Ospina): configuración profesional del archivo de logs
 # 1. CONFIGURACIÓN DEL LOGGING
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[logging.FileHandler('sistema_fj.log', mode='w', encoding='utf-8'), logging.StreamHandler()]
+from logging.handlers import RotatingFileHandler  # Manejador que limita el tamaño del archivo de log
+from pathlib import Path  # Permite construir rutas de archivos de forma segura en Windows, Linux y macOS
+
+RUTA_LOG = Path(__file__).resolve().parent / "sistema_fj.log"  # El log se crea junto al programa, sin importar desde dónde se ejecute
+FORMATO_LOG = "%(asctime)s | %(levelname)-8s | %(funcName)s:%(lineno)d | %(message)s"  # Fecha, nivel, función y línea de origen, mensaje
+FORMATO_FECHA = "%Y-%m-%d %H:%M:%S"  # Fecha legible sin milisegundos (ej. 2026-11-17 20:15:03)
+
+manejador_archivo = RotatingFileHandler(  # Escribe los eventos en el archivo sistema_fj.log
+    RUTA_LOG,
+    mode="a",  # "a" = añadir: conserva el historial de todas las sesiones (antes "w" lo borraba en cada ejecución)
+    maxBytes=1_000_000,  # Cuando el archivo llega a ~1 MB se rota para que no crezca sin límite
+    backupCount=3,  # Se guardan hasta 3 copias anteriores: sistema_fj.log.1, .2 y .3
+    encoding="utf-8",  # Permite tildes y ñ en los mensajes
 )
+manejador_archivo.setLevel(logging.DEBUG)  # El archivo guarda TODO, incluidos los detalles técnicos (DEBUG)
+
+manejador_consola = logging.StreamHandler()  # Muestra los eventos en la terminal
+manejador_consola.setLevel(logging.INFO)  # La consola solo muestra INFO o superior, para no saturar al usuario
+
+logging.basicConfig(  # Aplica la configuración al registrador raíz que usan todas las llamadas logging.*()
+    level=logging.DEBUG,  # Nivel mínimo global; cada manejador filtra después según su propio nivel
+    format=FORMATO_LOG,
+    datefmt=FORMATO_FECHA,
+    handlers=[manejador_archivo, manejador_consola],
+)
+# <<<<<<<<<< FIN CAMBIO 1
 
 # 2. EXCEPCIONES PERSONALIZADAS
 class ErrorValidacion(Exception): pass
@@ -108,6 +130,8 @@ class Reserva:
                     raise ServicioNoDisponible("El servicio no está disponible en este momento.") from e
             
             costo = self.servicio.calcular_costo(duracion, impuesto=0.19, descuento=5000)
+            # CAMBIO 2 - Integrante 4 (Mateo): detalle técnico del cálculo; solo queda en el archivo (nivel DEBUG)
+            logging.debug(f"Cálculo: servicio={type(self.servicio).__name__}, horas={duracion}, impuesto=0.19, descuento=5000, costo={costo}")
             self.estado = "Confirmada"
         
         except ErrorValidacion as e:
@@ -117,7 +141,8 @@ class Reserva:
             logging.error(f"Error de servicio: {e} | Causa: {e.__cause__}")
             self.estado = "Fallida"
         except Exception as e:
-            logging.critical(f"Error inesperado: {e}")
+            # CAMBIO 3 - Integrante 4 (Mateo): exc_info=True guarda en el log la traza completa del error inesperado
+            logging.critical(f"Error inesperado: {e}", exc_info=True)
             self.estado = "Fallida"
         else:
             logging.info(f"Reserva exitosa. Costo total: ${costo}")
@@ -131,6 +156,7 @@ if __name__ == "__main__":
     s3 = AsesoriaEspecializada(3, "Asesoría en Python")
     
     servicios_disponibles = {"1": s1, "2": s2, "3": s3}
+    logging.info("===== INICIO DE SESIÓN DEL SISTEMA SOFTWARE FJ =====")  # CAMBIO 4 - Integrante 4 (Mateo): separa cada ejecución en el historial del log
 
     while True:
         print("\n=== SISTEMA INTEGRAL SOFTWARE FJ (MENÚ INTERACTIVO) ===")
@@ -141,6 +167,7 @@ if __name__ == "__main__":
         
         if opcion == "2":
             print("Saliendo del sistema. ¡Hasta luego!")
+            logging.info("===== FIN DE SESIÓN =====\n")  # CAMBIO 4 - Integrante 4 (Mateo): cierre de sesión registrado
             break
             
         if opcion == "1":
@@ -161,6 +188,7 @@ if __name__ == "__main__":
                 s_op = input("Elija el servicio (1-3): ").strip()
                 if s_op not in servicios_disponibles:
                     print("❌ Opción de servicio inválida.")
+                    logging.warning(f"Servicio inválido seleccionado: {s_op!r}")  # CAMBIO 5 - Integrante 4 (Mateo)
                     continue
                 
                 servicio_actual = servicios_disponibles[s_op]
@@ -176,11 +204,13 @@ if __name__ == "__main__":
                 reserva = Reserva(cliente_actual, servicio_actual)
                 reserva.procesar(dur, estado_serv)
                 
-            except ValueError:
+            except ValueError as e:
                 print("❌ Error de formato: Ingrese valores numéricos válidos donde corresponda.")
+                logging.warning(f"Dato con formato inválido ingresado por el usuario: {e}")  # CAMBIO 5 - Integrante 4 (Mateo): antes este error no quedaba en el log
             except ErrorValidacion as e:
                 logging.error(f"Error de validación en consola: {e}")
             except Exception as e:
-                logging.critical(f"Error inesperado: {e}")
+                logging.critical(f"Error inesperado: {e}", exc_info=True)  # CAMBIO 3 - Integrante 4 (Mateo): traza completa en el log
         else:
             print("❌ Opción no válida. Intente de nuevo.")
+            logging.warning(f"Opción de menú inválida: {opcion!r}")  # CAMBIO 5 - Integrante 4 (Mateo): registro de opciones inválidas

@@ -1,0 +1,7 @@
+# Archivos de log generados al ejecutar el programa (Integrante 4)
+*.log
+*.log.*
+
+# Archivos temporales de Python
+__pycache__/
+*.pyc
